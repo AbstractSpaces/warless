@@ -49,7 +49,14 @@
     <Content Include="views\layout.pug" />
     <Content Include="views\error.pug" />
     <TypeScriptCompile Include="src\app.ts" />
-    <TypeScriptCompile Include="src\game\Entity.ts">
+    <TypeScriptCompile Include="src\game\controllers\Main.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="src\game\model\Entity.ts" />
+    <TypeScriptCompile Include="src\game\model\Model.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="src\game\model\Warrior.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
     <TypeScriptCompile Include="src\routes\index.ts" />
@@ -67,6 +74,8 @@
     <Folder Include="public\stylesheets\" />
     <Folder Include="routes\" />
     <Folder Include="src\game\" />
+    <Folder Include="src\game\model\" />
+    <Folder Include="src\game\controllers\" />
     <Folder Include="src\routes\" />
     <Folder Include="views\" />
   </ItemGroup>

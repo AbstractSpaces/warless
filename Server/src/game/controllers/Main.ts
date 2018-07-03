@@ -1,0 +1,1 @@
+﻿export let TICK_RATE = 60;

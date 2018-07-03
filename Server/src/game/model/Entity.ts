@@ -1,24 +1,24 @@
 ﻿import Victor = require("victor");
-import { Box } from "Box";
+import { Box } from "Model";
 
 export abstract class Entity {
     // Not yet sure how much time I should spend restricting access to instance variables.
     public hp: number;
 
     constructor(
-        readonly MAX_HP: number,
-        readonly SPEED: number, // Entity either moves at SPEED or is stopped.
-        readonly AABB: Box,     // Distance from local origin of the collision box sides.
+        public readonly MAX_HP: number,
+        public readonly AABB: Box,     // Distance from local origin of the collision box sides.
         public team: number,
         public pos: Victor,
         public vel: Victor,
         public r: number,       // Angle of rotation counter clockwise from positive y axis.
+        protected speed: number // Entity either moves at SPEED or is stopped.
     ) {
         this.hp = this.MAX_HP;
     }
     // Change direction of vel while keeping magnitude constant.
     public accelerate(acc: Victor): void {
-        this.vel.add(acc).normalize().multiplyScalar(this.SPEED);
+        this.vel.add(acc).normalize().multiplyScalar(this.speed);
     }
 
     public stop(): void {
