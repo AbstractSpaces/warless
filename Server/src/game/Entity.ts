@@ -1,4 +1,5 @@
-﻿import { normalise } from "./Vector";
+﻿import Victor = require("victor");
+import { Box } from "Box";
 
 export abstract class Entity {
     // Not yet sure how much time I should spend restricting access to instance variables.
@@ -6,25 +7,26 @@ export abstract class Entity {
 
     constructor(
         readonly MAX_HP: number,
-        readonly SPEED: number,
-        readonly W: number,
-        readonly H: number,
+        readonly SPEED: number, // Entity either moves at SPEED or is stopped.
+        readonly AABB: Box,     // Distance from local origin of the collision box sides.
         public team: number,
-        public x: number,
-        public y: number,
-        public dX: number,
-        public dY: number,
-        public r: number,
+        public pos: Victor,
+        public vel: Victor,
+        public r: number,       // Angle of rotation counter clockwise from positive y axis.
     ) {
         this.hp = this.MAX_HP;
     }
-
-    public accelerate(x: number, y: number): void {
-        [this.dX, this.dY] = normalise(this.dX + x, this.dY + y, this.SPEED);
+    // Change direction of vel while keeping magnitude constant.
+    public accelerate(acc: Victor): void {
+        this.vel.add(acc).normalize().multiplyScalar(this.SPEED);
     }
 
     public stop(): void {
-        [this.dX, this.dY] = [0, 0];
+        this.vel.multiplyScalar(0);
+    }
+    // Change pos according to vel.
+    public move(): void {
+        this.pos.add(this.vel);
     }
 
     public turn(r: number): void {
@@ -36,10 +38,14 @@ export abstract class Entity {
         this.stop();
         // TODO: walk back if sprites are overlapping.
     }
-
-    public cut(): void {
+    // Reduce hp, check for death.
+    public hit(): void {
         this.hp -= 1;
+        if (this.hp <= 0) {
+            this.die();
+        }
     }
 
     public abstract die(): void;
+    public abstract tick(): void;   // Trigger any per-tick timers or decision logic.
 }

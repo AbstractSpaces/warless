@@ -1,13 +1,10 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es5",
-    "lib": ["es5"],
+    "lib": [ "es5" ],
+    "module": "umd",
+    "outDir": "dist",
     "sourceMap": true,
-    "outDir": "./",
-    "rootDir": "./src"
+    "target": "es5"
   },
-  "exclude": [
-    "node_modules"
-  ]
+  "include": [ "src/**/*" ]
 }
