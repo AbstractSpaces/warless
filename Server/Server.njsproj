@@ -61,9 +61,6 @@
     <TypeScriptCompile Include="src\game\model\Warrior.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\Util.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
     <TypeScriptCompile Include="src\routes\index.ts" />
     <TypeScriptCompile Include="src\routes\user.ts" />
   </ItemGroup>

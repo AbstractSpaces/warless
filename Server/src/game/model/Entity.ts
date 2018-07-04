@@ -18,11 +18,11 @@ export interface Entity {           // Implemented by all physical objects.
     collide(ent: Entity): void      // Process effect of colliding with ent.
     hit(dmg: number): void,         // Take damage.
     die(): void,                    // Triggered when hp reaches 0.
-    tick(): void                    // Increment any timers.
+    tick(): void                    // Increment any timers and trigger timed effects.
 };
 
 // Template functions for Entities.
-// Yes I know "this" is dangerous, but it seems the best approach.
+// Yes I know "this" is dangerous, but it seems the best approach for composing class methods.
 export function basicAcc(acc: Victor): void {
     this.vel.add(acc).normalize().multiplyScalar(this.speed);
 }
@@ -39,5 +39,14 @@ export function basicHit(): void {
     this.hp -= 1;
     if (this.hp <= 0) {
         this.die();
+    }
+}
+
+export function tock(timer: number): number {
+    if (timer == 0) {
+        return timer;
+    }
+    else {
+        return timer > 0 ? timer -= 1 : timer += 1;
     }
 }
