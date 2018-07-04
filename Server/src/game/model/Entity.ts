@@ -1,51 +1,43 @@
-﻿import Victor = require("victor");
-import { Box } from "Model";
+﻿import Victor = require("Victor");
 
-export abstract class Entity {
-    // Not yet sure how much time I should spend restricting access to instance variables.
-    public hp: number;
+export interface Box {
+    readonly xMin: number;
+    readonly xMax: number;
+    readonly yMin: number;
+    readonly yMax: number;
+}
 
-    constructor(
-        public readonly MAX_HP: number,
-        public readonly AABB: Box,     // Distance from local origin of the collision box sides.
-        public team: number,
-        public pos: Victor,
-        public vel: Victor,
-        public r: number,       // Angle of rotation counter clockwise from positive y axis.
-        protected speed: number // Entity either moves at SPEED or is stopped.
-    ) {
-        this.hp = this.MAX_HP;
-    }
-    // Change direction of vel while keeping magnitude constant.
-    public accelerate(acc: Victor): void {
-        this.vel.add(acc).normalize().multiplyScalar(this.speed);
-    }
+export interface Entity {           // Implemented by all physical objects.
+    team: number,                   // Indexed from 0.
+    AABB: Box,                      // Rectangular bounding box for approximating collisions.
+    pos: Victor,                    // Location coordinate.
+    rot: number,                    // Orientation as multiples of Pi, counter-clockwise from positive y axis.
+    accelerate(acc: Victor): void,  // Add acc to velocity.
+    stop(): void,                   // Set velocity to 0.
+    move(): void,                   // Add velocity to pos.
+    collide(ent: Entity): void      // Process effect of colliding with ent.
+    hit(dmg: number): void,         // Take damage.
+    die(): void,                    // Triggered when hp reaches 0.
+    tick(): void                    // Increment any timers.
+};
 
-    public stop(): void {
-        this.vel.multiplyScalar(0);
-    }
-    // Change pos according to vel.
-    public move(): void {
-        this.pos.add(this.vel);
-    }
+// Template functions for Entities.
+// Yes I know "this" is dangerous, but it seems the best approach.
+export function basicAcc(acc: Victor): void {
+    this.vel.add(acc).normalize().multiplyScalar(this.speed);
+}
 
-    public turn(r: number): void {
-        this.r = r;
-    }
+export function basicStop(): void {
+    this.vel.multiplyScalar(0);
+}
 
-    // In the current version, all collisions have the same effect.
-    public collide(): void {
-        this.stop();
-        // TODO: walk back if sprites are overlapping.
-    }
-    // Reduce hp, check for death.
-    public hit(): void {
-        this.hp -= 1;
-        if (this.hp <= 0) {
-            this.die();
-        }
-    }
+export function basicMove(): void {
+    this._pos.add(this.vel);
+}
 
-    public abstract die(): void;
-    public abstract tick(): void;   // Trigger any per-tick timers or decision logic.
+export function basicHit(): void {
+    this.hp -= 1;
+    if (this.hp <= 0) {
+        this.die();
+    }
 }
