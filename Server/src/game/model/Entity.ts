@@ -1,22 +1,29 @@
 ﻿import Victor = require("Victor");
 import { Box } from "./Collision";
 
-export interface Action {
-    readonly name: string;
-    readonly cooldown: number;
-    readonly duration: number;
-}
-
-export class Timer {
+export class Action {
     public count: number                               // Action in progress when count >0, on cooldown when count <0.
 
-    public constructor(public readonly action: Action) {
+    public constructor(
+        public readonly cooldown: number,
+        public readonly duration: number
+    ) {
         this.count = 0;
+    }
+
+    public trigger(): boolean {                         // I don't have a use case for the return value yet, but I can foresee it being helpful.
+        if (this.count == 0) {
+            this.count += 1;
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     public tock(): void {
         if (this.count > 0) {
-            this.count = this.count == this.action.duration ? -this.action.cooldown : this.count + 1;
+            this.count = this.count == this.duration ? -this.cooldown : this.count + 1;
         }
         else if (this.count < 0) {
             this.count += 1;
@@ -24,9 +31,11 @@ export class Timer {
     }
 }
 
-export abstract class Entity {                  // Superclass of all physical objects.
-    private timers: any;
+export interface ActionList {
+    [action: string]: Action;
+}
 
+export abstract class Entity {                  // Superclass of all physical objects.
     public constructor(
         public readonly team: number,           // Indexed from 0.
         public readonly AABB: Box,              // Rectangular bounding box for approximating collisions.
@@ -35,13 +44,8 @@ export abstract class Entity {                  // Superclass of all physical ob
         protected _pos: Victor,
         protected _vel: Victor,
         protected _speed: number,
-        actions: [Action]
-    ) {
-        this.timers = {};
-        for (let i = 0; i < actions.length; i++) {
-            this.timers[actions[i].name] = new Timer(actions[i]);
-        }
-    }
+        protected _actions: ActionList
+    ) { }
 
     public get pos(): Victor {                  // TBD if cloning the object will hurt performance.
         return this._pos.clone();
@@ -66,6 +70,21 @@ export abstract class Entity {                  // Superclass of all physical ob
         }
     }
 
+    public act(action: string): boolean {
+        if (action in this._actions) {
+            return this._actions[action].trigger();
+        }
+        else {
+            throw action + " not applicable to this Entity";
+        }
+    }
+
     public abstract die(): void;                // Triggered when hp reaches 0.
     public abstract tick(): void;               // Increment any timers and trigger timed effects.
+
+    protected tock(): void {
+        for (let a in this._actions) {
+            this._actions[a].tock;
+        }
+    }
 }
