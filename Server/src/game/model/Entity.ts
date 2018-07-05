@@ -1,52 +1,71 @@
 ﻿import Victor = require("Victor");
+import { Box } from "./Collision";
 
-export interface Box {
-    readonly xMin: number;
-    readonly xMax: number;
-    readonly yMin: number;
-    readonly yMax: number;
+export interface Action {
+    readonly name: string;
+    readonly cooldown: number;
+    readonly duration: number;
 }
 
-export interface Entity {           // Implemented by all physical objects.
-    team: number,                   // Indexed from 0.
-    AABB: Box,                      // Rectangular bounding box for approximating collisions.
-    pos: Victor,                    // Location coordinate.
-    rot: number,                    // Orientation as multiples of Pi, counter-clockwise from positive y axis.
-    accelerate(acc: Victor): void,  // Add acc to velocity.
-    stop(): void,                   // Set velocity to 0.
-    move(): void,                   // Add velocity to pos.
-    collide(ent: Entity): void      // Process effect of colliding with ent.
-    hit(dmg: number): void,         // Take damage.
-    die(): void,                    // Triggered when hp reaches 0.
-    tick(): void                    // Increment any timers and trigger timed effects.
-};
+export class Timer {
+    public count: number                               // Action in progress when count >0, on cooldown when count <0.
 
-// Template functions for Entities.
-// Yes I know "this" is dangerous, but it seems the best approach for composing class methods.
-export function basicAcc(acc: Victor): void {
-    this.vel.add(acc).normalize().multiplyScalar(this.speed);
-}
+    public constructor(public readonly action: Action) {
+        this.count = 0;
+    }
 
-export function basicStop(): void {
-    this.vel.multiplyScalar(0);
-}
-
-export function basicMove(): void {
-    this._pos.add(this.vel);
-}
-
-export function basicHit(): void {
-    this.hp -= 1;
-    if (this.hp <= 0) {
-        this.die();
+    public tock(): void {
+        if (this.count > 0) {
+            this.count = this.count == this.action.duration ? -this.action.cooldown : this.count + 1;
+        }
+        else if (this.count < 0) {
+            this.count += 1;
+        }
     }
 }
 
-export function tock(timer: number): number {
-    if (timer == 0) {
-        return timer;
+export abstract class Entity {                  // Superclass of all physical objects.
+    private timers: any;
+
+    public constructor(
+        public readonly team: number,           // Indexed from 0.
+        public readonly AABB: Box,              // Rectangular bounding box for approximating collisions.
+        public rot: number,                     // Orientation as multiples of Pi, counter-clockwise from positive y axis.
+        protected _hp: number,
+        protected _pos: Victor,
+        protected _vel: Victor,
+        protected _speed: number,
+        actions: [Action]
+    ) {
+        this.timers = {};
+        for (let i = 0; i < actions.length; i++) {
+            this.timers[actions[i].name] = new Timer(actions[i]);
+        }
     }
-    else {
-        return timer > 0 ? timer -= 1 : timer += 1;
+
+    public get pos(): Victor {                  // TBD if cloning the object will hurt performance.
+        return this._pos.clone();
     }
+
+    public accelerate(acc: Victor): void {      // Add acc to velocity, keeping speed constant.
+        this._vel.add(acc).normalize().multiplyScalar(this._speed);
+    }
+
+    public stop(): void {                       // Set velocity to 0.
+        this._vel.multiplyScalar(0);
+    }
+
+    public move(): void {                       // Add velocity to pos.
+        this._pos.add(this._vel);
+    }
+
+    public hit(dmg: number): void {             // Take damage.
+        this._hp -= 1;
+        if (this._hp <= 0) {
+            this.die();
+        }
+    }
+
+    public abstract die(): void;                // Triggered when hp reaches 0.
+    public abstract tick(): void;               // Increment any timers and trigger timed effects.
 }

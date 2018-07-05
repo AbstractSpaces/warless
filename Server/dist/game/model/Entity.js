@@ -9,28 +9,44 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    ;
-    // Template functions for Entities.
-    // Yes I know "this" is dangerous, but it seems the best approach for composing class methods.
-    function basicAcc(acc) {
-        this.vel.add(acc).normalize().multiplyScalar(this.speed);
-    }
-    exports.basicAcc = basicAcc;
-    function basicStop() {
-        this.vel.multiplyScalar(0);
-    }
-    exports.basicStop = basicStop;
-    function basicMove() {
-        this._pos.add(this.vel);
-    }
-    exports.basicMove = basicMove;
-    function basicHit() {
-        this.hp -= 1;
-        if (this.hp <= 0) {
-            this.die();
+    var Entity = /** @class */ (function () {
+        function Entity(team, // Indexed from 0.
+        AABB, // Rectangular bounding box for approximating collisions.
+        rot, // Orientation as multiples of Pi, counter-clockwise from positive y axis.
+        _hp, _pos, _vel, _speed, timers) {
+            this.team = team;
+            this.AABB = AABB;
+            this.rot = rot;
+            this._hp = _hp;
+            this._pos = _pos;
+            this._vel = _vel;
+            this._speed = _speed;
         }
-    }
-    exports.basicHit = basicHit;
+        Object.defineProperty(Entity.prototype, "pos", {
+            get: function () {
+                return this._pos.clone();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Entity.prototype.accelerate = function (acc) {
+            this._vel.add(acc).normalize().multiplyScalar(this._speed);
+        };
+        Entity.prototype.stop = function () {
+            this._vel.multiplyScalar(0);
+        };
+        Entity.prototype.move = function () {
+            this._pos.add(this._vel);
+        };
+        Entity.prototype.hit = function (dmg) {
+            this._hp -= 1;
+            if (this._hp <= 0) {
+                this.die();
+            }
+        };
+        return Entity;
+    }());
+    exports.Entity = Entity;
     function tock(timer) {
         if (timer == 0) {
             return timer;

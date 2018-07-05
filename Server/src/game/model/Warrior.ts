@@ -4,7 +4,7 @@ import Victor = require("Victor");
 
 // TBD if this actually works, it's the cleanest way to do private static data that I can think of.
 // Mainly wanted private static as an easy way to keep static objects from being mutated.
-
+/*
 // Duration time of actions, expressed in ticks.
 const SLASH_DUR: number = perTick(0.5);
 const DASH_DUR: number = perTick(0.5);
@@ -43,13 +43,7 @@ export class Warrior implements Entity.Entity {
 
     public rot: number;
 
-    public get pos(): Victor {                      // TBD if cloning the object will hurt performance.
-        return this._pos.clone();
-    }
-
-    public get AABB(): Entity.Box {
-        return AABB;
-    }
+    
 
     public get dashT(): number {
         return this._dashT;
@@ -113,4 +107,4 @@ export class Warrior implements Entity.Entity {
             this._dashT += 1;
         }
     }
-}
+}*/
