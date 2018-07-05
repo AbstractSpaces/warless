@@ -52,16 +52,19 @@
     <TypeScriptCompile Include="src\game\controllers\Main.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\model\Collision.ts">
+    <TypeScriptCompile Include="src\game\model\Collisions.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\model\Entity.ts">
+    <TypeScriptCompile Include="src\game\model\Actions.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\model\Model.ts">
+    <TypeScriptCompile Include="src\game\model\Dicts.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\model\Warrior.ts">
+    <TypeScriptCompile Include="src\game\model\Entities.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="src\game\model\Timers.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
     <TypeScriptCompile Include="src\routes\index.ts" />
