@@ -49,22 +49,22 @@
     <Content Include="views\layout.pug" />
     <Content Include="views\error.pug" />
     <TypeScriptCompile Include="src\app.ts" />
-    <TypeScriptCompile Include="src\game\controllers\Main.ts">
+    <TypeScriptCompile Include="src\game\Global.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
     <TypeScriptCompile Include="src\game\model\Collisions.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\model\Actions.ts">
+    <TypeScriptCompile Include="src\game\model\Abilities.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\model\Dicts.ts">
+    <TypeScriptCompile Include="src\game\model\GameState.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="src\game\model\Maps.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
     <TypeScriptCompile Include="src\game\model\Entities.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="src\game\model\Timers.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
     <TypeScriptCompile Include="src\routes\index.ts" />
