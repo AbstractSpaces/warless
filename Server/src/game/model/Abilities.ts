@@ -23,8 +23,7 @@ export interface DashROM extends AbilityROM {
 export interface TimerROM {                     // Timers are what is actually given to an entity and how it uses its abilities.
     readonly start: () => void,
     readonly tick: () => void,
-
-    count: number                               // >0 if ability in progress, <0 if on cooldown.
+    readonly count: number                      // >0 if ability in progress, <0 if on cooldown.                   
 }
 
 /**************************** Prototypes **************************************/

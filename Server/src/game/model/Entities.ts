@@ -9,8 +9,8 @@ export interface EntityROM {                // ROM: read only methods.
     readonly id: number,                    // Unique, used in mapping and server communication.
     readonly AABB: Box,                     // Axis aligned bounding box.
     readonly maxHP: number,
-    hp: number,
-    pos: Victor,
+    readonly hp: number,
+    readonly pos: Victor,
     team: number,
     rot: number,
     
