@@ -1,10 +1,11 @@
-﻿export enum TimerEvents { REST, TICK, DONE, COOL}
+﻿export enum TimerEvent { REST, START, TICK, DONE, COOL}
 
 export class Timer {
-    private _time: number = 0;                  // In progress if >0, on cooldown if <0.
+    private _time: number = 0;                      // In progress if >0, on cooldown if <0.
+    private _status: TimerEvent = TimerEvent.REST;
 
-    public get time(): number {
-        return this._time;
+    public get status(): TimerEvent {
+        return this._status;
     }
 
     public constructor(
@@ -12,26 +13,30 @@ export class Timer {
         public readonly cooldown: number,
     ) { }
 
-    public start(): void {
-        this._time += 1;
+    public start(): TimerEvent {
+        if (this._status == TimerEvent.REST) {
+            this._time += 1;
+            this._status = TimerEvent.START;
+        }
+        return this._status;
     }
 
-    public update(): TimerEvents {
-        if (this._time != 0) {
-            this._time += 1;
-            if (this._time == this.duration) {
+    public update(): TimerEvent {
+        this._time += 1;
+        switch (this._time) {
+            case (1):                               // This is a little more readable than nesting the rest inside an if block.
+                this._time = 0;
+                break
+            case (this.duration):
                 this._time = -(this.cooldown);
-                return TimerEvents.DONE;
-            }
-            else if (this._time == 0) {
-                return TimerEvents.COOL;
-            }
-            else {
-                return TimerEvents.TICK;
-            }
+                this._status = TimerEvent.DONE;
+                break;
+            case (0):
+                this._status = TimerEvent.REST;
+                break;
+            default:
+                this._status = this._status > 0 ? TimerEvent.TICK : TimerEvent.COOL;
         }
-        else {
-            return TimerEvents.REST;
-        }
+        return this._status;
     }
 }

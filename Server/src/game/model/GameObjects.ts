@@ -2,12 +2,11 @@
 import { Box } from "./Collisions";
 import { Constructor, FACING } from "../Global";
 import { Dict } from "./Maps";
-import { Timer, TimerEvents } from "./Timers";
+import { Timer, TimerEvent } from "./Timers";
 
 /**************************** Classes *****************************************/
-/* Every physical object will extend Entity. */
 
-export class Entity {
+export class Entity {                               // Every physical object will extend Entity.
     public readonly id: number;                     // Unique, used in mapping and server communication.
     public readonly AABB: Box;                      // Axis aligned bounding box.
     public readonly maxHP: number;
@@ -79,22 +78,21 @@ export function Moving<T extends Constructor<Entity>>(base: T, speed: number = 0
 
 export function Dashing<T extends Constructor<Mobile>>(base: T, duration: number = 0, cooldown: number = 0, multiplier: number = 0) {
     return class Dasher extends base {
-        protected dashT: Timer = new Timer(duration, cooldown);
+        protected _dashT: Timer = new Timer(duration, cooldown);
         protected _dashMulti = multiplier;                      // How much faster the dash makes its user.
                                                                 // Could be static but in future versions it'll change when the entity gets a powerup.
 
         public dash(): void {
-            if (this.dashT.time == 0) {
+            if (this._dashT.start() == TimerEvent.START) {
                 this._speed *= this._dashMulti;
                 if (this._moving) {
                     this._vel.multiplyScalar(this._dashMulti);
                 }
-                this.dashT.start();
             }
         }
 
         public update(): void {
-            if (this.dashT.update() == TimerEvents.DONE) {
+            if (this._dashT.update() == TimerEvent.DONE) {
                 this._speed /= this._dashMulti;
                 if (this._moving) {
                     this._vel.divideScalar(this._dashMulti);
@@ -103,4 +101,35 @@ export function Dashing<T extends Constructor<Mobile>>(base: T, duration: number
             super.update();
         }
     };
+}
+
+export function Slashing<T extends Constructor<Entity>>(base: T, duration: number = 0, cooldown: number = 0, range: number = 0, arc: number = 0) {
+    return class Slasher extends base {
+        protected _slashT: Timer = new Timer(duration, cooldown);
+        protected _slashRange = range;                              // Length of the sword measured from object centre.
+        protected _slashArc = arc;                                  // Angle of the arc traced by the sword tip.
+        protected _sword: Victor = new Victor(0, 0);                // Line from object centre to sword tip.
+
+        public get sword(): Victor {
+            return new Victor(this._sword.x, this._sword.y);
+        }
+
+        public slash(): void {
+            if (this._slashT.start() == TimerEvent.START) {
+                this._sword.x = this._slashRange;
+                this.sword.rotateBy((1 - this._slashArc) / 2 * Math.PI);
+            }
+        }
+
+        public update(): void {
+            switch (this._slashT.update()) {
+                case (TimerEvent.DONE):
+                    this._sword.multiplyScalar(0);
+                    break;
+                case (TimerEvent.TICK):
+                    this._sword.rotateBy((this._slashArc / duration) * Math.PI);
+            }
+            super.update();
+        }
+    }
 }
