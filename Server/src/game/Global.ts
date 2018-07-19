@@ -6,10 +6,6 @@ export const FACING: number[] = [0, 1];                         // Spawn rotatio
 
 /**************************** Utility Types ***********************************/
 
-export interface Constructor<T> {
-    new(...args: any[]): T;         // Generic constructor used for passing classes to mixins.
-}
-
 export enum TimerEvent { REST, START, TICK, DONE, COOL }
 
 /**************************** Utility Classes *********************************/
@@ -25,7 +21,7 @@ export class NumDict<T> {                                       // Not sure how 
 export class Set extends NumDict<null> { }                      // Used to list groups of Entity ID's.
 
 export class Timer {
-    private _time: number = 0;                      // In progress if >0, on cooldown if <0.
+    private _time: number = 0;                                  // In progress if >0, on cooldown if <0.
     private _status: TimerEvent = TimerEvent.REST;
 
     public get status(): TimerEvent {
@@ -68,4 +64,8 @@ export class Timer {
 
 export function inTicks(seconds: number): number {              // Per-second counts are easier to read and write.
     return seconds / TICK_RATE;
+}
+
+export function radians(deg: number): number {
+    return deg / 180 * Math.PI;
 }

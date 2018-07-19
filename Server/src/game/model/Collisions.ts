@@ -1,96 +1,100 @@
-﻿import Victor = require("Victor");
-import { Set, NumDict } from "../Global";
-import { Entity, Mobile, Moving, Slashing } from "./GameObjects";
+﻿import { Set, NumDict } from "../Global";
+import { Entity, Mobile } from "./GameObjects";
+/**************************** Types *******************************************/
 
-/**************************** Interfaces **************************************/
+export interface Shape {
+    // Global or local coordinate of centre.
+    centre: vec2;
+    // Return a copy of the shape placed on the global coordinate system.
+    global(trans: mat2d): this;
+}
 
-export interface Shape { }                              // Just a container to classify the shape classes.
+// Describes two vertices forming an edge.
+type Edge = [vec2, vec2];
 
 /**************************** Classes *****************************************/
+export class Circle implements Shape {
+    protected _radius: number;
+    protected _centre = vec2.fromValues(0, 0);
 
-export class Box implements Shape {
-    public static is(s: any): s is Box {
-        return s.xMin !== undefined;
+    public get radius(): number {
+        return this._radius;
     }
 
-    public constructor(
-        public readonly xMin: number,
-        public readonly xMax: number,
-        public readonly yMin: number,
-        public readonly yMax: number
-    ) { }
+    public get centre(): vec2 {
+        return vec2.clone(this._centre);
+    }
 
-    public corner(x: number, y: number): Victor {        // Positive x means right side, negative means left, positive y means top, negative means bottom.
-        return new Victor(
-            x > 0 ? this.xMax : this.xMin,
-            y > 0 ? this.yMax : this.yMin
+    public constructor(radius: number = 0) {
+        this._radius = radius;
+    }
+
+    public global(trans: mat2d): this {
+        const c = new Circle();
+        c._radius = this._radius;
+        vec2.transformMat2d(c._centre, this._centre, trans);
+        return c as this;
+    }
+}
+
+export class Polygon implements Shape {
+    protected _centre = vec2.fromValues(0, 0);
+    protected _vertices: vec2[];
+    protected _normals: vec2[];
+
+    public get centre(): vec2 {
+        return vec2.clone(this._centre);
+    }
+
+    public get vertices(): vec2[] {
+        return this._vertices.map(v => vec2.clone(v));
+    }
+
+    public get normals(): vec2[] {
+        return this._normals.map(n => vec2.clone(n));
+    }
+
+    public constructor(vertices: vec2[] = [], edges: Edge[] = []) {
+        if (vertices !== undefined && edges !== undefined) {
+            this._vertices = vertices.map(v => vec2.clone(v));
+            this._normals = edges.map(e => {
+                // Make sure the right side normal is the outer one by taking the rightmost vertex as the edge's origin.
+                const o = e[0][0] > e[1][0] ? 0 : 1;
+                // Direction of the edge.
+                const dir = vec2.subtract(vec2.create(), e[(o + 1) % 2], e[o]);
+                // Outward normal of the edge. Re-using dir to save performance.
+                [dir[0], dir[1]] = [-dir[1], dir[0]];
+                return dir;
+            });
+        }
+    }
+
+    public global(trans: mat2d): this {
+        const p = new Polygon();
+        vec2.transformMat2d(p._centre, this._centre, trans);
+        p._vertices = this._vertices.map(v => vec2.transformMat2d(vec2.create(), v, trans));
+        p._normals = this._normals.map(n => vec2.transformMat2d(vec2.create(), n, trans));
+        return p as this;
+    }
+}
+
+export class Box extends Polygon {
+    public constructor(width: number, height: number) {
+        const [hW, hH] = [width / 2, height / 2];
+        const v = [
+            vec2.fromValues(hW, hH),
+            vec2.fromValues(-hW, hH),
+            vec2.fromValues(-hW, -hH),
+            vec2.fromValues(hW, -hH)
+        ];
+        super(
+            v,
+            [
+                [v[0], v[1]],
+                [v[1], v[2]],
+                [v[2], v[3]],
+                [v[3], v[0]]
+            ]
         );
     }
-}
-
-export class Circle implements Shape {
-    public static is(s: any): s is Circle {
-        return s.radius !== undefined;
-    }
-
-    public constructor(
-        public readonly radius: number
-    ) { }
-}
-
-export class Line extends Victor implements Shape {     // This allows Victors to be passed wherever shapes are.
-    public static is(s: any): s is Line {
-        return s.x !== undefined;
-    }
-}
-
-export class Grid extends NumDict<NumDict<Set>> {      // Acts like a 2D array of cells, except empty cells aren't listed.
-
-}
-
-/**************************** Detection Functions *****************************/
-/* Each detection function returns the translation vector that will move the first entity to stop overlapping with the second. A (0,0) vector means no overlap and no collision.
- * The diff argument is the vector from the passive shape's centre to the active one's.
- * The vel argument is the velocity of the active shape. The translation should be in the reverse direction of its motion, so it gets pushed directly backwards.
- */
-
-export function collide(active: Mobile, passive: Entity): Victor {
-    const diff = passive.pos.subtract(active.pos);
-    if (Circle.is(active.shape) && Circle.is(passive.shape)) {
-        return circleCircle(active.shape, passive.shape, diff, active.vel);
-    }
-    else if (Box.is(active.shape) && Box.is(passive.shape)) {
-        return boxBox(active.shape, passive.shape, diff, active.vel);
-    }
-}
-
-function transDirection(vel: Victor): Victor {
-    return Victor.fromObject(vel).normalize().invert();
-}
-
-function circleCircle(active: Circle, passive: Circle, diff: Victor, vel: Victor): Victor {
-    const minDist = active.radius + passive.radius;
-    if (diff.length() < minDist) {
-        /* Start with a reversed and normalised velocity as the translation.
-         * The trans vector needs magnitude such that adding it to diff gives a vector with magnitude == minDist.
-         * This resultant diff is the third side of a triangle where diff and trans are the other two.
-         * Setting this side's length to minDiff, we can find the length of trans using some trigonemtry.
-         */
-        const b = minDist, c = diff.length();       // Renaming triangle components to keep things comprehensible.
-        const trans = transDirection(vel);
-        const B = Math.acos(trans.dot(diff) / c);   // Angle between diff and trans. Trans length is 1 right now so it can be removed from the equation.
-        const C = Math.asin(c * Math.sin(B) / b);   // Angle between minDist side and trans.
-        const A = Math.PI - B - C;
-        const a = Math.sin(A) * b / Math.sin(B);
-        return trans.multiplyScalar(a);
-    }
-    else {
-        return new Victor(0, 0);
-    }
-}
-
-
-
-function boxBox(active: Box, passive: Box, diff: Victor, vel: Victor): Victor {
-
 }
