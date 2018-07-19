@@ -1,62 +1,113 @@
 ﻿import { radians } from "../Global";
 
+/**************************** Types *******************************************/
+
+export type LazyOp = (v: LazyVec) => void;
+
 // The amount of defensive copying was getting annoying, immutable vectors will be easier to work with and probably increase performance.
 export class Vector {
-    private _x: number;
-    private _y: number;
-    private _length: number;
+    public readonly x: number;
+    public readonly y: number;
+    public readonly length: number;
 
-    public get x(): number { return this._x; }
-    public get y(): number { return this._y; }
-    public get length(): number { return this._length; }
+    public constructor(x: number = 0, y: number = 0) {
+        [this.x, this.y] = [x, y];
+        this.length = length(x, y);
+    }
+}
 
-    public constructor(x: number, y: number) {
-        this.setV(x, y);
-    }
-    
-    private setV(x: number, y: number): Vector {
-        [this._x, this._y] = [x, y];
-        this._length = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-        return this;
-    }
+export class LazyVec {
+    public x: number;
+    public y: number;
 
-    public add(v: Vector): Vector {
-        return new Vector(this.x + v.x, this.y + v.y);
+    public constructor(v: Vector) {
+        [this.x, this.y] = [v.x, v.y];
     }
+}
 
-    public sub(v: Vector): Vector {
-        return new Vector(this.x - v.x, this.y - v.y);
-    }
+/**************************** Functions ***************************************/
 
-    public scale(s: number): Vector {
-        return new Vector(this.x * s, this.y * s);
-    }
+export function length(x: number, y: number): number {
+    return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+}
 
-    public normalise(): Vector {
-        return new Vector(this.x / this.length, this.y / this.length);
-    }
+// Hopefully the overhead of reusing lazyCalc isn't a problem.
+export function add(v1: Vector, v2: Vector): Vector {
+    return Lazy.calc(v1, Lazy.add(v2.x, v2.y));
+}
 
-    public rotate(deg: number): Vector {
-        // Shorcuts for rotating multiples of 90 and 180 degrees.
-        if (deg == 0) {
-            return this;
-        }
-        else if (deg % 180 == 0) {
-            return this.scale(Math.pow(-1, deg / 180));
-        }
-        else if (deg % 90 == 0) {
-            return new Vector(this.y, -(this.x)).scale(Math.pow(-1, deg / 90));
-        }
-        else {
-            const r = radians(deg);
-            const x = this.x * Math.cos(r) - this.y * Math.sin(r);
-            const y = this.x * Math.sin(r) + this.y * Math.cos(r);
-            return new Vector(x, y);
-        }
-    }
+export function sub(v1: Vector, v2: Vector): Vector {
+    return Lazy.calc(v1, Lazy.sub(v2.x, v2.y));
+}
+
+export function scale(v: Vector, s: number): Vector {
+    return Lazy.calc(v, Lazy.scale(s));
+}
+
+export function normalise(v: Vector): Vector {
+    return Lazy.calc(v, Lazy.normalise(v.length));
+}
+
+export function rotate(v: Vector, deg: number): Vector {
+    return Lazy.calc(v, Lazy.rotate(deg));
 }
 
 // Find the right-sided normal to a line between points.
 export function normal(p1: Vector, p2: Vector): Vector {
-    return p2.sub(p1).rotate(270);
+    return Lazy.calc(p2, Lazy.sub(p1.x, p1.y), Lazy.rotate(270), Lazy.normalise());
+}
+
+// In-place operations to avoid creating intermediate objects.
+export namespace Lazy {
+    export function calc(v1: Vector, ...ops: LazyOp[]): Vector {
+        const v2 = new LazyVec(v1);
+        for (let o of ops) {
+            o(v2);
+        }
+        return new Vector(v2.x, v2.y);
+    }
+
+    export function add(x: number, y: number): LazyOp {
+        return (v: LazyVec) => {
+            v.x += x;
+            v.y += y;
+        };
+    }
+
+    export function sub(x: number, y: number): LazyOp {
+        return Lazy.add(-x, -y);
+    }
+
+    export function scale(s: number): LazyOp {
+        return (v: LazyVec) => {
+            v.x *= s;
+            v.y *= s;
+        };
+    }
+    // The operation can be sped up if the length is already known.
+    export function normalise(l?: number): LazyOp {
+        return (v: LazyVec) => {
+            Lazy.scale(1 / (l === undefined ? length(v.x, v.y) : l))(v);
+        }
+    }
+
+    export function rotate(deg: number): LazyOp {
+        return (v: LazyVec) => {
+            if (deg != 0) {
+                // Shorcuts for rotating multiples of 90 and 180 degrees.
+                if (deg % 180 == 0) {
+                    Lazy.scale(Math.pow(-1, deg / 180))(v);
+                }
+                else if (deg % 90 == 0) {
+                    Lazy.scale(Math.pow(-1, deg / 90))(v);
+                }
+                else {
+                    const r = radians(deg);
+                    const x = v.x * Math.cos(r) - v.y * Math.sin(r);
+                    const y = v.x * Math.sin(r) + v.y * Math.cos(r);
+                    [v.x, v.y] = [x, y];
+                }
+            }
+        }
+    }
 }
