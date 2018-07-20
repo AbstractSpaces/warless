@@ -2,112 +2,115 @@
 
 /**************************** Types *******************************************/
 
-export type LazyOp = (v: LazyVec) => void;
-
 // The amount of defensive copying was getting annoying, immutable vectors will be easier to work with and probably increase performance.
+// Took a bit of puzzling to work out code sharing between thawed and frozen versions.
 export class Vector {
-    public readonly x: number;
-    public readonly y: number;
-    public readonly length: number;
+    // This one gets used a lot, so sharing a fixed reference should save some garbage.
+    public static readonly zero = new Vector(0, 0);
 
-    public constructor(x: number = 0, y: number = 0) {
-        [this.x, this.y] = [x, y];
-        this.length = length(x, y);
+    private _x: number;
+
+    private _y: number;
+
+    private _length: number;
+
+    private _frozen: Boolean;
+
+    public get x(): number { return this._x; }
+
+    public get y(): number { return this._y; }
+
+    public get length(): number { return this._length; }
+
+    public constructor(x: number, y: number, frozen: Boolean = true) {
+        [this._x, this._y] = [x, y];
+        this._frozen = frozen;
+        // Don't bother evaluating for mutables until length is needed.
+        if (frozen) {
+            this.setLength();
+        }
     }
-}
+    // Return a mutable copy ready for chaining in-place operations.
+    public thaw(): Vector {
+        if (this._frozen) {
+            return new Vector(this.x, this.y, false);
+        }
+        else {
+            return this;
+        }
+    }
+    // Finalise into an immutable structure.
+    public freeze(): Vector {
+        this.setLength();
+        this._frozen = true;
+        return this;
+    }
 
-export class LazyVec {
-    public x: number;
-    public y: number;
+    public add(x: number, y: number): Vector {
+        return this.thaw().setXY(this._x + x, this._y + y).finish(this._frozen);
+    }
 
-    public constructor(v: Vector) {
-        [this.x, this.y] = [v.x, v.y];
+    public sub(x: number, y: number): Vector {
+        return this.add(-x, -y);
+    }
+
+    public scale(s: number): Vector {
+        return this.thaw().setXY(this._x * s, this._y * s).finish(this._frozen);
+    }
+
+    public normalise(): Vector {
+        if (!this._frozen) {
+            this.setLength();
+        }
+        return this.scale(1 / this.length);
+    }
+
+    public rotate(deg: number): Vector {
+        const v = this.thaw();
+        if (deg == 0) {
+            return v.setXY(this.x, this.y).finish(this._frozen);
+        }
+        // Shorcuts for rotating multiples of 90 and 180 degrees.
+        else if (deg % 180 == 0) {
+            return v.scale(Math.pow(-1, deg / 180)).finish(this._frozen);
+        }
+        else if (deg % 90 == 0) {
+            return v.setXY(-this._y, this._x).scale(Math.pow(-1, deg / 90)).finish(this._frozen);
+        }
+        else {
+            const r = radians(deg);
+            const x = this._x * Math.cos(r) - this._y * Math.sin(r);
+            const y = this._x * Math.sin(r) + this._y * Math.cos(r);
+            return v.setXY(x, y).finish(this._frozen);
+        }
+    }
+
+    // Find the right-sided normal of a line to this from another vector.
+    public normalTo(p1: Vector): Vector {
+        return this.thaw().sub(p1.x, p1.y).rotate(270).normalise().finish(this._frozen);
+    }
+
+    private setXY(x: number, y: number): Vector {
+        [this._x, this._y] = [x, y];
+        return this;
+    }
+    // Allows vectors to freeze their return value based on whether they themselves are frozen, since a frozen is expected to return a frozen and vice-versa.
+    private finish(freeze: Boolean): Vector {
+        if (freeze) {
+            return this.freeze();
+        }
+        else {
+            return this;
+        }
+    }
+
+    private setLength(): void {
+        this._length = pythagoras(this.x, this.y);
     }
 }
 
 /**************************** Functions ***************************************/
 
-export function length(x: number, y: number): number {
-    return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-}
-
-// Hopefully the overhead of reusing lazyCalc isn't a problem.
-export function add(v1: Vector, v2: Vector): Vector {
-    return Lazy.calc(v1, Lazy.add(v2.x, v2.y));
-}
-
-export function sub(v1: Vector, v2: Vector): Vector {
-    return Lazy.calc(v1, Lazy.sub(v2.x, v2.y));
-}
-
-export function scale(v: Vector, s: number): Vector {
-    return Lazy.calc(v, Lazy.scale(s));
-}
-
-export function normalise(v: Vector): Vector {
-    return Lazy.calc(v, Lazy.normalise(v.length));
-}
-
-export function rotate(v: Vector, deg: number): Vector {
-    return Lazy.calc(v, Lazy.rotate(deg));
-}
-
-// Find the right-sided normal to a line between points.
-export function normal(p1: Vector, p2: Vector): Vector {
-    return Lazy.calc(p2, Lazy.sub(p1.x, p1.y), Lazy.rotate(270), Lazy.normalise());
-}
-
-// In-place operations to avoid creating intermediate objects.
-export namespace Lazy {
-    export function calc(v1: Vector, ...ops: LazyOp[]): Vector {
-        const v2 = new LazyVec(v1);
-        for (let o of ops) {
-            o(v2);
-        }
-        return new Vector(v2.x, v2.y);
-    }
-
-    export function add(x: number, y: number): LazyOp {
-        return (v: LazyVec) => {
-            v.x += x;
-            v.y += y;
-        };
-    }
-
-    export function sub(x: number, y: number): LazyOp {
-        return Lazy.add(-x, -y);
-    }
-
-    export function scale(s: number): LazyOp {
-        return (v: LazyVec) => {
-            v.x *= s;
-            v.y *= s;
-        };
-    }
-    // The operation can be sped up if the length is already known.
-    export function normalise(l?: number): LazyOp {
-        return (v: LazyVec) => {
-            Lazy.scale(1 / (l === undefined ? length(v.x, v.y) : l))(v);
-        }
-    }
-
-    export function rotate(deg: number): LazyOp {
-        return (v: LazyVec) => {
-            if (deg != 0) {
-                // Shorcuts for rotating multiples of 90 and 180 degrees.
-                if (deg % 180 == 0) {
-                    Lazy.scale(Math.pow(-1, deg / 180))(v);
-                }
-                else if (deg % 90 == 0) {
-                    Lazy.scale(Math.pow(-1, deg / 90))(v);
-                }
-                else {
-                    const r = radians(deg);
-                    const x = v.x * Math.cos(r) - v.y * Math.sin(r);
-                    const y = v.x * Math.sin(r) + v.y * Math.cos(r);
-                    [v.x, v.y] = [x, y];
-                }
-            }
-        }
-    }
+export function pythagoras(a: number, b: number): number {
+    return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
 }
