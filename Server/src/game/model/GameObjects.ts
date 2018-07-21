@@ -1,6 +1,6 @@
 ﻿import { Box, Shape } from "./Collisions";
 import { FACING, Timer, TimerEvent } from "../Global";
-import { Vector, Lazy, add, scale, rotate } from "./Vectors";
+import { Vector } from "./Geometry";
 
 /**************************** Types *******************************************/
 
@@ -17,11 +17,11 @@ export class Entity {
 
     protected _hp: number;
 
-    protected _pos: Vector = null;
+    protected _pos: Vector;
     // Axis aligned bounding box for broad phase collision detection.
     protected _AABB: Box;
     // "Actual" shape used for narrow phase collision detection.
-    protected _shape: Shape = null;
+    protected _shape: Shape;
 
     public get hp(): number {
         return this._hp;
@@ -35,7 +35,7 @@ export class Entity {
         return this._shape.transform(this.pos, this.rot);
     }
 
-    public constructor(id: number = 0, maxHP: number = 0, team: number = 0, pos: Vector = null, AABB: Box = null, shape: Shape = null) {
+    public constructor(id: number = 0, maxHP: number = 0, team: number = 0, pos: Vector = Vector.zero, AABB: Box = null, shape: Shape = null) {
         this._hp = maxHP;
         this.rot = FACING[team];
         this._pos = pos;
@@ -70,7 +70,7 @@ export class Slasher extends Slashing() { }
 
 export function Moving(base: typeof Entity = Entity, speed: number = 0) {
     return class Mobile extends base {
-        protected _vel: Vector = new Vector();
+        protected _vel: Vector = Vector.zero;
 
         protected _speed: number = speed;
 
@@ -79,15 +79,15 @@ export function Moving(base: typeof Entity = Entity, speed: number = 0) {
         }
         // Add to velocity, keeping magnitude <= speed.
         public accelerate(acc: Vector): void {
-            this._vel = Lazy.calc(this._vel, Lazy.add(acc.x, acc.y), Lazy.normalise(), Lazy.scale(this._speed));
+            this._vel = this._vel.thaw().add(acc.x, acc.y).scale(this._speed / this._vel.length).freeze();
         }
 
         public stop(): void {
-            this._vel = new Vector();
+            this._vel = Vector.zero;
         }
 
         public update(): void {
-            this._pos = add(this._pos, this._vel);
+            this._pos = this._pos.add(this._vel.x, this._vel.y);
             super.update();
         }
     }
@@ -105,7 +105,7 @@ export function Dashing(base: typeof Mobile = Mobile, duration: number = 0, cool
         public dash(): void {
             if (this._dashT.start() == TimerEvent.START) {
                 this._speed *= this._dashMulti;
-                this._vel = scale(this._vel, this._dashMulti);
+                this._vel = this._vel.scale(this._dashMulti);
                 this._noClip = true;
             }
         }
@@ -113,7 +113,7 @@ export function Dashing(base: typeof Mobile = Mobile, duration: number = 0, cool
         public update(): void {
             if (this._dashT.update() == TimerEvent.DONE) {
                 this._speed /= this._dashMulti;
-                this._vel = scale(this._vel, 1 / this._dashMulti);
+                this._vel = this._vel.scale(1 / this._dashMulti);
                 this._noClip = false;
             }
             super.update();
@@ -134,11 +134,11 @@ export function Slashing(base: typeof Entity = Entity, duration: number = 0, coo
         protected _slashRange = range;
         // Angle of the arc traced by the sword tip.
         protected _slashArc = arc;
-        // Angle of the sword at the start of slash.
+        // Vector of the sword at the start of slash.
         // Current formula only works for slashes <= 180 degrees.
-        protected _startAng = (180 - arc) / 2;
+        protected _swordStart = Vector.zero.thaw().add(this._slashRange, 0).rotate((180 - arc) / 2).freeze();
         // Line from object centre to sword tip.
-        protected _sword: Vector = new Vector()
+        protected _sword: Vector = Vector.zero;
 
         public get sword(): Vector {
             return this._sword;
@@ -146,17 +146,17 @@ export function Slashing(base: typeof Entity = Entity, duration: number = 0, coo
 
         public slash(): void {
             if (this._slashT.start() == TimerEvent.START) {
-                this._sword = Lazy.calc(this._sword, Lazy.add(this._slashRange, 0), Lazy.rotate(this._startAng));
+                this._sword = this._swordStart;
             }
         }
 
         public update(): void {
             switch (this._slashT.update()) {
                 case (TimerEvent.DONE):
-                    this._sword = new Vector()
+                    this._sword = Vector.zero;
                     break;
                 case (TimerEvent.TICK):
-                    this._sword = rotate(this._sword, this._slashArc / duration);
+                    this._sword = this._sword.rotate(this._slashArc / this._slashT.duration);
                     break;
             }
             super.update();

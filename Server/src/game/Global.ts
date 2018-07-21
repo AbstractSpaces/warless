@@ -2,26 +2,28 @@
 
 export const TICK_RATE: number = 60;
 export const TICK_MS: number = 1000 / TICK_RATE;
-export const FACING: number[] = [0, 1];                         // Spawn rotation of each team.
+// Spawn rotation of each team.
+export const FACING: number[] = [90, 270];
 
 /**************************** Utility Types ***********************************/
 
 export enum TimerEvent { REST, START, TICK, DONE, COOL }
 
 /**************************** Utility Classes *********************************/
-
-export class StringDict<T> {                                    // 1-dimensional map.
+// 1-dimensional map.
+export class StringDict<T> {
     [key: string]: T;
 }
-
-export class NumDict<T> {                                       // Not sure how to roll both Dicts into one generic type.
+// Not sure how to roll both Dicts into one generic type.
+export class NumDict<T> {
     [key: number]: T;
 }
-
-export class Set extends NumDict<null> { }                      // Used to list groups of Entity ID's.
+// Used to list groups of Entity ID's.
+export class EntitySet extends NumDict<null> { }
 
 export class Timer {
-    private _time: number = 0;                                  // In progress if >0, on cooldown if <0.
+    // In progress if >0, on cooldown if <0.
+    private _time: number = 0;
     private _status: TimerEvent = TimerEvent.REST;
 
     public get status(): TimerEvent {
@@ -61,11 +63,7 @@ export class Timer {
 }
 
 /*************************** Utility Functions ********************************/
-
-export function inTicks(seconds: number): number {              // Per-second counts are easier to read and write.
+// Per-second counts are easier to read and write.
+export function inTicks(seconds: number): number {
     return seconds / TICK_RATE;
-}
-
-export function radians(deg: number): number {
-    return deg / 180 * Math.PI;
 }
