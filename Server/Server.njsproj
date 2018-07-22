@@ -52,6 +52,9 @@
     <TypeScriptCompile Include="src\game\Global.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
+    <TypeScriptCompile Include="src\game\model\Collisions.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="src\game\model\GameState.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>

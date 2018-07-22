@@ -1,6 +1,5 @@
-﻿import { Box, Shape } from "./Collisions";
-import { FACING, Timer, TimerEvent } from "../Global";
-import { Vector } from "./Geometry";
+﻿import { FACING, Timer, TimerEvent } from "../Global";
+import { Vector, Box, Shape } from "./Geometry";
 
 /**************************** Types *******************************************/
 
@@ -13,7 +12,7 @@ export class Entity {
 
     public team: number;
 
-    public rot: number;
+    public rotation: number;
 
     protected _hp: number;
 
@@ -32,18 +31,20 @@ export class Entity {
     }
 
     public get shape(): Shape {
-        return this._shape.transform(this.pos, this.rot);
+        return this._shape.transform(this.pos, this.rotation);
+    }
+
+    public get AABB(): Box {
+        return this._AABB.transform(this.pos, this.rotation);
     }
 
     public constructor(id: number = 0, maxHP: number = 0, team: number = 0, pos: Vector = Vector.zero, AABB: Box = null, shape: Shape = null) {
         this._hp = maxHP;
-        this.rot = FACING[team];
+        this.rotation = FACING[team];
         this._pos = pos;
         this._AABB = AABB;
         this._shape = shape;
     }
-    // Execute any state changes that occur every tick.
-    public update(): void { }
 
     public hurt(dmg: number): void {
         this._hp -= dmg;
@@ -51,6 +52,8 @@ export class Entity {
             this.kill();
         }
     }
+    // Execute any state changes that occur every tick.
+    public update(): void { }
 
     public kill(): void { }
 }
