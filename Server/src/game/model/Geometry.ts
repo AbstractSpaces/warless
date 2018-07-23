@@ -195,6 +195,28 @@ export class Box extends Polygon {
         );
     }
 }
+// Version of the Box that can't be rotated and doesn't calculate normals.
+export class AABB extends Shape {
+    public get xSpan(): [number, number] {
+        return [this.centre.x - this.width / 2, this.centre.x + this.width / 2];
+    }
+
+    public get ySpan(): [number, number] {
+        return [this.centre.y - this.height / 2, this.centre.y + this.height / 2];
+    }
+
+    public constructor(
+        public readonly width: number,
+        public readonly height: number,
+        centre?: Vector
+    ) {
+        super(centre);
+    }
+
+    public transform(translate: Vector): this {
+        return new AABB(this.width, this.height, translate) as this;
+    }
+}
 
 /**************************** Functions ***************************************/
 // I'm a little shocked these aren't included in Math.

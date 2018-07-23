@@ -10,6 +10,7 @@ export const FACING: number[] = [90, 270];
 export enum TimerEvent { REST, START, TICK, DONE, COOL }
 
 /**************************** Utility Classes *********************************/
+
 // 1-dimensional map.
 export class StringDict<T> {
     [key: string]: T;
@@ -63,6 +64,7 @@ export class Timer {
 }
 
 /*************************** Utility Functions ********************************/
+
 // Per-second counts are easier to read and write.
 export function inTicks(seconds: number): number {
     return seconds / TICK_RATE;
