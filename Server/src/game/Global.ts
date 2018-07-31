@@ -1,31 +1,35 @@
 ﻿/**************************** Game Config Data ********************************/
 
 export const TICK_RATE: number = 60;
-export const TICK_MS: number = 1000 / TICK_RATE;
+export const TICK_MS = 1000 / TICK_RATE;
+// Numerical measurement of map dimensions.
+export const WORLD_SIZE = 1;
 // Spawn rotation of each team.
 export const FACING: number[] = [90, 270];
 
 /**************************** Utility Types ***********************************/
 
 export enum TimerEvent { REST, START, TICK, DONE, COOL }
+// May not need this after all, TBD whether to delete it.
+export interface Constructable<T = {}> {
+    new(...args: any[]): T;
+}
 
 /**************************** Utility Classes *********************************/
 
 // 1-dimensional map.
-export class StringDict<T> {
-    [key: string]: T;
-}
-// Not sure how to roll both Dicts into one generic type.
-export class NumDict<T> {
+export class Dict<T> {
     [key: number]: T;
 }
-// Used to list groups of Entity ID's.
-export class EntitySet extends NumDict<null> { }
 
 export class Timer {
     // In progress if >0, on cooldown if <0.
     private _time: number = 0;
     private _status: TimerEvent = TimerEvent.REST;
+
+    public get time(): number {
+        return this._time;
+    }
 
     public get status(): TimerEvent {
         return this._status;

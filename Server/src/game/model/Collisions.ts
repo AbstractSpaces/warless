@@ -1,11 +1,73 @@
-﻿import { Circle, Vector, Shape, Polygon, Box, AABB } from "./Geometry";
-import { NumDict, EntitySet } from "../Global";
+﻿import { Circle, Vector, Polygon, Box, AABB, UnionShape } from "./Geometry";
+import { Dict, WORLD_SIZE } from "../Global";
+import { Entity } from "./GameObjects";
 
 /**************************** Types *******************************************/
 
 // Spatial hash to determine which AABBs need comparing in the broad phase checks.
-export class BroadMap extends NumDict<NumDict<EntitySet>> {
+export class BroadMap {
+    // Map of grid cells to Entity IDs. Internally represented as 1 dimensional to make referencing each cell a little cleaner.
+    // IDs stored as Dict properties rather than a list for faster lookups.
+    protected grid: Dict<Dict<null>>;
 
+    protected readonly size: number;
+
+    protected readonly cellSize: number;
+
+    public constructor(size: number) {
+        this.grid = new Dict();
+        this.size = size;
+        this.cellSize = WORLD_SIZE / this.size;
+    }
+
+    public insert(e: Entity): void {
+        for (let c of this.occupied(e)) {
+            if (this.grid[c] === undefined) this.grid[c] = new Dict();
+            this.grid[c][e.id] = null;
+        }
+    }
+
+    public remove(e: Entity): void {
+        for (let c of this.occupied(e)) {
+            delete this.grid[c][e.id];
+            if (Object.getOwnPropertyNames(this.grid[c]).length === 0) delete this.grid[c];
+        }
+    }
+
+    public sharedCells(e: Entity): number[] {
+        const s = [];
+        for (let c of this.occupied(e)) {
+            for (let id of Object.getOwnPropertyNames(this.grid[c]).map((str) => new Number(str))) {
+                if (id !== e.id) s.push(id);
+            }
+        }
+        return s;
+    }
+
+    // Find the cells occuppied by the Entity.
+    // I thought about storing this as an Entity property, but decided it was best to separate responsibility.
+    // If calculating on the fly causes slowdown I'll think about storing between ticks.
+    protected occupied(e: Entity): number[] {
+        // Find the cells associated with top-right and bottom-left AABB corners.
+        const tR = this.cell(e.pos.x + e.width / 2, e.pos.y + e.height / 2);
+        const bL = this.cell(e.pos.x - e.width / 2, e.pos.y - e.height / 2);
+        // Can skip the rest if opposite corners occupy the same cell.
+        if (tR === bL) return [tR];
+        else {
+            const cells = [tR, bL];
+            const tL = this.cell(e.pos.x - e.width / 2, e.pos.y + e.height / 2);
+            const bR = this.cell(e.pos.x + e.width / 2, e.pos.y - e.height / 2);
+            if (tL !== tR) cells.push(tL);
+            if (bR !== bL) cells.push(bR);
+            return cells;
+        }
+    }
+
+    // Take a real coordinate and find the cell it relates to.
+    protected cell(x: number, y: number): number {
+        const [row, col] = [Math.floor(x / this.cellSize), Math.floor(y / this.cellSize)];
+        return row * this.size + col;
+    }
 }
 
 /**************************** Functions ***************************************/
@@ -20,21 +82,21 @@ export function broadCheck(b1: AABB, b2: AABB): Boolean {
 // Use the separating axis theorem to determine overlap.
 // Returns a translation vector for the moving shape that will remove any overlap.
 // If there is no collision, returns (0,0).
-export function narrowCheck(moving: Circle | Polygon, still: Circle | Polygon): Vector {
+export function narrowCheck(moving: UnionShape, still: UnionShape): Vector {
     // Putting into an array makes looping easier.
     const ms = [moving, still];
     // Start by determining the axes to project vertices onto.
     const axes: Vector[] = [];
     // The simplest case involves just the difference between circle centres.
-    if (Circle.typeGuard(ms[0]) && Circle.typeGuard(ms[1])) axes.push(ms[0].centre.sub(ms[1].centre.x, ms[1].centre.y));
+    if (Circle.typeGuard(ms[0]) && Circle.typeGuard(ms[1])) axes.push(ms[0].origin.sub(ms[1].origin.x, ms[1].origin.y));
     else {
         for (let i = 0; i < 2; i++) {
             if (Circle.typeGuard(ms[i])) {
-                // Find the closest vertex in the other shape to the circle centre.
+                // Find the closest vertex in the other shape to the circle origin.
                 let close = Vector.zero;
                 // Apparently type narrowing doesn't work on array elements.
                 for (let v of (ms[(i + 1) % 2] as Polygon).vertices) {
-                    if (ms[i].centre.sub(v.x, v.y).length < close.length) close = v;
+                    if (ms[i].origin.sub(v.x, v.y).length < close.length) close = v;
                 }
                 axes.push(close);
             }
@@ -53,13 +115,13 @@ export function narrowCheck(moving: Circle | Polygon, still: Circle | Polygon): 
         else if (intersect < trans.length) trans = a.thaw().normalise().scale(intersect);
     }
     // Finally, ensure that the overlap vector is directing the moving shape away from the still one.
-    if (moving.centre.sub(still.centre.x, still.centre.y).scalarIn(trans) < 0) trans.scale(-1);
+    if (moving.origin.sub(still.origin.x, still.origin.y).scalarIn(trans) < 0) trans.scale(-1);
     return trans;
 }
 
-function coverage(s: Circle | Polygon, axis: Vector): [number, number] {
+function coverage(s: UnionShape, axis: Vector): [number, number] {
     if (Circle.typeGuard(s)) {
-        const c = s.centre.scalarIn(axis);
+        const c = s.origin.scalarIn(axis);
         return [c - s.radius, c + s.radius];
     }
     else {

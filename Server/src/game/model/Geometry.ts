@@ -1,5 +1,8 @@
 ﻿/**************************** Types *******************************************/
 
+// Type guards need union types to work properly.
+export type UnionShape = Circle | Polygon | Line;
+
 // The amount of defensive copying was getting annoying, immutable structures will be easier to work with and probably increase performance.
 // Took a bit of puzzling to work out code sharing between thawed and frozen versions.
 abstract class Freezable {
@@ -80,11 +83,14 @@ export class Vector extends Freezable {
     }
 
     public rotate(deg: number): Vector {
+        // Life is easier if angles are positive and < 360.
+        deg = deg % 360;
+        deg = deg < 0 ? deg + 360 : deg;
         const v = this.thaw();
-        if (deg == 0) v.setXY(this.x, this.y);
+        if (deg === 0) v.setXY(this.x, this.y);
         // Shorcuts for rotating multiples of 90 and 180 degrees.
-        else if (deg % 180 == 0) v.scale(Math.pow(-1, deg / 180));
-        else if (deg % 90 == 0) v.setXY(-this._y, this._x).scale(Math.pow(-1, deg / 90));
+        else if (deg === 180) v.scale(Math.pow(-1, deg / 180));
+        else if (deg % 90 === 0) v.setXY(-this._y, this._x).scale(Math.pow(-1, deg / 90));
         else {
             const r = radians(deg);
             const x = this._x * Math.cos(r) - this._y * Math.sin(r);
@@ -122,11 +128,11 @@ export class Vector extends Freezable {
     }
 }
 // As of now there's no need to chain operations on shapes, so they can be straight up immutable.
-export abstract class Shape {
-    public readonly centre: Vector;
-    // Shapes default to using local coordinates where their centre is (0,0).
-    protected constructor(centre: Vector = Vector.zero) {
-        this.centre = centre.freeze();
+abstract class Shape {
+    public readonly origin: Vector;
+    // Shapes default to using local coordinates where their origin is (0,0).
+    protected constructor(origin: Vector = Vector.zero) {
+        this.origin = origin.freeze();
     }
     // Return a copy that uses a different coordinate system.
     public abstract transform(translate: Vector, rotate: number): this;
@@ -139,13 +145,13 @@ export class Circle extends Shape {
 
     public readonly radius: number;
 
-    public constructor(radius: number, centre?: Vector) {
-        super(centre);
+    public constructor(radius: number, origin?: Vector) {
+        super(origin);
         this.radius = radius;
     }
 
     public transform(translate: Vector, rotate: number = 0): this {
-        return new Circle(this.radius, this.centre.add(translate.x, translate.y)) as this;
+        return new Circle(this.radius, this.origin.add(translate.x, translate.y)) as this;
     }
 }
 
@@ -158,15 +164,15 @@ export class Polygon extends Shape {
     // Outward facing normal of each edge.
     public readonly normals: ReadonlyArray<Vector>;
     // Checking that vertices are listed in clockwise order sounds too hard and not that important right now, so I'm skipping it.
-    // Vertices are given in relation to centre.
-    public constructor(vertices: Vector[], centre: Vector = Vector.zero) {
-        super(centre);
+    // Vertices are given in relation to origin.
+    public constructor(vertices: Vector[], origin: Vector = Vector.zero) {
+        super(origin);
         // TypeScript doesn't seem to protect from passing a mutable array in even if the parameter requires a readonly one, so making a copy is safest.
         // It also seems to provide no protection against simply casting to a mutable type. Nice one.
         const v = new Array<Vector>(vertices.length);
         const n = new Array<Vector>(vertices.length - 1);
         for (let i = 0; i < v.length; i++) {
-            v[i] = vertices[i].thaw().add(centre.x, centre.y).freeze();
+            v[i] = vertices[i].thaw().add(origin.x, origin.y).freeze();
             if (i > 0) n[i] = v[i].normalFrom(v[i-1]);
         }
         [this.vertices, this.normals] = [v, n];
@@ -176,13 +182,21 @@ export class Polygon extends Shape {
         return new Polygon(
             // By not freezing, the constructor can reuse the vectors being passed to it.
             this.vertices.map(v => v.thaw().rotate(rotate)),
-            this.centre.add(translate.x, translate.y)
+            this.origin.add(translate.x, translate.y)
         ) as this;
     }
 }
 
+export class Line extends Polygon {
+    public constructor(p1: Vector, p2: Vector, origin: Vector = Vector.zero) {
+        super([p1, p2], origin);
+        // At least the lack of real immutability has some uses.
+        (this.normals as Array<Vector>).push(this.normals[0].scale(-1));
+    }
+}
+
 export class Box extends Polygon {
-    public constructor(width: number, height: number, centre?: Vector) {
+    public constructor(width: number, height: number, origin?: Vector) {
         const [hW, hH] = [width / 2, height / 2];
         super(
             [
@@ -191,26 +205,26 @@ export class Box extends Polygon {
                 new Vector(-hW, -hH, false),
                 new Vector(hW, -hH, false)
             ],
-            centre
+            origin
         );
     }
 }
 // Version of the Box that can't be rotated and doesn't calculate normals.
 export class AABB extends Shape {
     public get xSpan(): [number, number] {
-        return [this.centre.x - this.width / 2, this.centre.x + this.width / 2];
+        return [this.origin.x - this.width / 2, this.origin.x + this.width / 2];
     }
 
     public get ySpan(): [number, number] {
-        return [this.centre.y - this.height / 2, this.centre.y + this.height / 2];
+        return [this.origin.y - this.height / 2, this.origin.y + this.height / 2];
     }
 
     public constructor(
         public readonly width: number,
         public readonly height: number,
-        centre?: Vector
+        origin?: Vector
     ) {
-        super(centre);
+        super(origin);
     }
 
     public transform(translate: Vector): this {
