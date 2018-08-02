@@ -48,6 +48,11 @@ export class Timer {
         return this._status;
     }
 
+    public reset(): void {
+        this._time = 0;
+        this._status = TimerEvent.REST;
+    }
+
     public update(): TimerEvent {
         if (this._time != 0) {
             this._time += 1;
@@ -72,4 +77,12 @@ export class Timer {
 // Per-second counts are easier to read and write.
 export function inTicks(seconds: number): number {
     return seconds / TICK_RATE;
+}
+// Emulation of ES6's Object.keys(), easier to read and write.
+export function ownKeys(x: any): string[] {
+    return Object.getOwnPropertyNames(x);
+}
+
+export function inDict<T>(dict: Dict<T>): T[] {
+    return ownKeys(dict).map(k => dict[k]);
 }

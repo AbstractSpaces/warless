@@ -1,5 +1,5 @@
 ﻿import { Circle, Vector, Polygon, Box, AABB, UnionShape } from "./Geometry";
-import { Dict, WORLD_SIZE } from "../Global";
+import { Dict, WORLD_SIZE, ownKeys } from "../Global";
 import { Entity } from "./GameObjects";
 
 /**************************** Types *******************************************/
@@ -30,20 +30,18 @@ export class BroadMap {
     public remove(e: Entity): void {
         for (let c of this.occupied(e)) {
             delete this.grid[c][e.id];
-            if (Object.getOwnPropertyNames(this.grid[c]).length === 0) delete this.grid[c];
+            if (ownKeys(this.grid[c]).length === 0) delete this.grid[c];
         }
     }
 
     public sharedCells(e: Entity): number[] {
         const s = [];
         for (let c of this.occupied(e)) {
-            for (let id of Object.getOwnPropertyNames(this.grid[c]).map((str) => new Number(str))) {
-                if (id !== e.id) s.push(id);
-            }
+            const ids = ownKeys(this.grid[c]).map((str) => parseInt(str));
+            for (let id of ids) if (id !== e.id) s.push(id);
         }
         return s;
     }
-
     // Find the cells occuppied by the Entity.
     // I thought about storing this as an Entity property, but decided it was best to separate responsibility.
     // If calculating on the fly causes slowdown I'll think about storing between ticks.
