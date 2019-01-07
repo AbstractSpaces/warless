@@ -1,0 +1,16 @@
+{
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+
+    ],
+    "compilerOptions": {
+        "removeComments": true,
+        "strict": true,
+        "outDir": "./",
+        "rootDir": "src",
+        "target": "es5",
+        "module": "umd"
+    }
+}

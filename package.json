@@ -1,0 +1,22 @@
+{
+  "name": "warless",
+  "version": "1.0.0",
+  "description": "This is my first real attempt at making a real game. It is a top-down, 1v1 real time strategy game that combines simple base building with fast paced arcade style combat.",
+  "main": "./dist/server/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbstractSpaces/warless.git"
+  },
+  "author": "Dylan Johnson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AbstractSpaces/warless/issues"
+  },
+  "homepage": "https://github.com/AbstractSpaces/warless#readme",
+  "dependencies": {
+    "koa": "^2.6.2"
+  }
+}
