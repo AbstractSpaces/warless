@@ -2,8 +2,9 @@
   "name": "warless",
   "version": "1.0.0",
   "description": "This is my first real attempt at making a real game. It is a top-down, 1v1 real time strategy game that combines simple base building with fast paced arcade style combat.",
-  "main": "./dist/server/index.js",
+  "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,6 +18,10 @@
   },
   "homepage": "https://github.com/AbstractSpaces/warless#readme",
   "dependencies": {
-    "koa": "^2.6.2"
+    "express": "^4.16.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.16.0",
+    "@types/node": "^10.12.18"
   }
 }
