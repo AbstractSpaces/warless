@@ -4,19 +4,21 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "express", "path", "./game_server/ServerMain"], factory);
+        define(["require", "exports", "express", "path", "./game/server/Main"], factory);
     }
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var express = require("express");
     var path = require("path");
-    var ServerMain_1 = require("./game_server/ServerMain");
-    var app = express();
-    var pubDir = path.join(__dirname, '/public');
+    var Main_1 = require("./game/server/Main");
     var port = 3000;
-    app.use(express.static(pubDir));
-    console.log(ServerMain_1.TestLoad());
-    console.log("Listening on " + port + " serving files from " + pubDir);
+    var app = express();
+    app.use("/", route);
+    console.log(Main_1.TestLoad());
+    console.log("Listening on " + port);
     app.listen(port);
+    function route(req, res) {
+        res.sendFile(path.join(__dirname + "/../public/index.html"));
+    }
 });
