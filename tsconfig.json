@@ -2,15 +2,13 @@
     "include": [
         "src/**/*"
     ],
-    "exclude": [
-
-    ],
+    "exclude": [ ],
     "compilerOptions": {
         "removeComments": true,
         "strict": true,
         "outDir": "dist",
         "rootDir": "src",
         "target": "es5",
-        "module": "umd"
+        "module": "commonjs"
     }
 }

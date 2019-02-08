@@ -1,13 +1,11 @@
-import express = require("express");
-import path = require("path");
-import { TestLoad } from "./game/server/Main";
+import * as express from "express"
+import * as path from "path";
 
 const port:number = 3000;
 const app:express.Express = express();
 
 app.use("/", route);
 
-console.log(TestLoad());
 console.log("Listening on " + port);
 
 app.listen(port);

@@ -1,4 +1,10 @@
-import {TestLoad} from "Module";
+import {TestLoad} from "./TestModule";
 
-const body:HTMLElement = document.getElementsByTagName("body")[0];
-body.innerHTML = TestLoad();
+const game = document.getElementById("GameWindow");
+
+if(game === null) {
+    console.log("Game window not found.");
+}
+else {
+    game.innerHTML = TestLoad();
+}
