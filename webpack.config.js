@@ -14,8 +14,9 @@ const base_config = {
     },
     output: {
         filename: "[name].js",
-        path: path.join(__dirname, "dist")
-    }
+        path: path.resolve(__dirname, "dist")
+    },
+    devtool: "source-map"
 };
 
 const server_config = Object.assign(

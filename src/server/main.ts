@@ -12,5 +12,5 @@ app.listen(port);
 
 // This will suffice while I focus on the game side of things.
 function route(req:express.Request, res:express.Response): void {
-    res.sendFile(path.join(__dirname + "/../public/index.html"));
+    res.sendFile(path.resolve("public/index.html"));
 }

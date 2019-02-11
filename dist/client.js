@@ -94,7 +94,17 @@
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _test_module__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./test_module */ \"./src/client/test_module.ts\");\n\r\nvar game = document.getElementById(\"GameWindow\");\r\nif (game === null) {\r\n    console.log(\"Game window not found.\");\r\n}\r\nelse {\r\n    game.innerHTML = Object(_test_module__WEBPACK_IMPORTED_MODULE_0__[\"TestLoad\"])();\r\n}\r\n\n\n//# sourceURL=webpack:///./src/client/main.ts?");
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _test_module__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./test_module */ "./src/client/test_module.ts");
+
+var game = document.getElementById("GameWindow");
+if (game === null) {
+    console.log("Game window not found.");
+}
+else {
+    game.innerHTML = Object(_test_module__WEBPACK_IMPORTED_MODULE_0__["TestLoad"])();
+}
+
 
 /***/ }),
 
@@ -106,8 +116,14 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _tes
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, \"TestLoad\", function() { return TestLoad; });\nfunction TestLoad() {\r\n    return \"Test module loaded.\";\r\n}\r\n\n\n//# sourceURL=webpack:///./src/client/test_module.ts?");
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TestLoad", function() { return TestLoad; });
+function TestLoad() {
+    return "Test module loaded.";
+}
+
 
 /***/ })
 
 /******/ });
+//# sourceMappingURL=client.js.map
