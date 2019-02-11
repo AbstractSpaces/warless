@@ -1,11 +1,41 @@
-// This config file is only used to bundle client game code. Server side code is untouched.
 const path = require('path');
 
-module.exports = {
-    entry: "./dist/game/client/Main.js",
-    output: {
-        filename: "ClientGame.js",
-        path: path.join(__dirname, "public/script")
+const base_config = {
+    mode: "development",
+    module: {
+        rules: [{
+            test: /\.tsx?$/,
+            use: "awesome-typescript-loader",
+            exclude: /node_modules/
+        }]
     },
-    mode: "development"
+    resolve: {
+        extensions: [ ".tsx", ".ts", ".js" ]
+    },
+    output: {
+        filename: "[name].js",
+        path: path.join(__dirname, "dist")
+    }
 };
+
+const server_config = Object.assign(
+    {
+        target: "node",
+        entry: {
+            server: "./src/server/main.ts"
+        }
+    },
+    base_config
+);
+
+const client_config = Object.assign(
+    {
+        target: "web",
+        entry: {
+            client: "./src/client/main.ts"
+        }
+    },
+    base_config
+);
+
+module.exports = [server_config, client_config];
