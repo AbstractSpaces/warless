@@ -22,6 +22,10 @@ const base_config = {
 const server_config = Object.assign(
     {
         target: "node",
+        node: {
+            __dirname: false,
+            __filename: false,
+          },
         entry: {
             server: "./src/server/main.ts"
         }
