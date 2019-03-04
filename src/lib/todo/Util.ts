@@ -1,4 +1,4 @@
-import { TICK_RATE } from "./Config";
+import { TICK_RATE } from "lib/Config";
 
 // May not need this after all, TBD whether to delete it.
 export interface Constructable<T = {}> {

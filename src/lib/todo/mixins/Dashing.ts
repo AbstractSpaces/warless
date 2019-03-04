@@ -1,6 +1,6 @@
-import { Ability } from "../Abilities";
-import { Mobile } from "../Mixins";
-import { Timer, TimerEvent } from "../../Timer";
+import { Ability } from "lib/entities/Abilities";
+import { Mobile } from "lib/mixins/Moving";
+import { Timer, TimerEvent } from "lib/Timer";
 
 export function Dashing(base: typeof Mobile = Mobile, duration: number = 0, cooldown: number = 0, multiplier: number = 0) {
     return class Dasher extends base {

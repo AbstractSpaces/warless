@@ -1,4 +1,5 @@
 const path = require('path');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 const base_config = {
     mode: "development",
@@ -10,7 +11,10 @@ const base_config = {
         }]
     },
     resolve: {
-        extensions: [ ".tsx", ".ts", ".js" ]
+        extensions: [ ".tsx", ".ts", ".js" ],
+        plugins: [
+            new TsconfigPathsPlugin()
+        ]
     },
     output: {
         filename: "[name].js",
